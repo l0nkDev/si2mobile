@@ -1,9 +1,9 @@
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'user_registration.dart';
 import 'login.dart';
 import 'catalogue.dart';
+import 'products.dart';
 
 void main() {
   runApp(MyApp());
@@ -29,22 +29,6 @@ class MyApp extends StatelessWidget {
 }
 
 class MyAppState extends ChangeNotifier {
-  var current = WordPair.random();
-  void getNext() {
-    current = WordPair.random();
-    notifyListeners();
-  }
-
-  var favorites = <WordPair>[];
-
-  void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
-    } else {
-      favorites.add(current);
-    }
-    notifyListeners();
-  }
 }
 
 class MyHomePage extends StatefulWidget {
@@ -55,7 +39,15 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
 var selectedIndex = 0;
-var token = ValueNotifier("");
+String token = "";
+String refreshToken = "";
+
+  void setToken(String newToken, String newRefreshToken) {
+    token = newToken;
+    refreshToken = newRefreshToken;
+    print(token);
+    print(refreshToken);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,32 +56,34 @@ var token = ValueNotifier("");
     case 0:
       page = UserRegistration();
     case 1:
-      page = Login(token);
+      page = Login(setToken);
     case 2:
-      page = Catalogue();
+      page = Catalogue(token);
+    case 3:
+      page = Products(token);
   default:
     throw UnimplementedError('no widget for $selectedIndex');
 }
     return LayoutBuilder(
       builder: (context, constraints) {
         return Scaffold(
-          body: Row(
-            children: [
-              SafeArea(
-                child: NavigationRail(
-                  extended: constraints.maxWidth >= 600,
+          bottomNavigationBar: NavigationBar(
                   destinations: [
-                    NavigationRailDestination(
+                    NavigationDestination(
                       icon: Icon(Icons.app_registration),
-                      label: Text('Register'),
+                      label: 'Registro',
                     ),
-                    NavigationRailDestination(
+                    NavigationDestination(
                       icon: Icon(Icons.login),
-                      label: Text('Login'),
+                      label: 'Login',
                     ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.home),
-                      label: Text('Home'),
+                    NavigationDestination(
+                      icon: Icon(Icons.list),
+                      label: 'Catálogo',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.list_alt),
+                      label: 'Productos',
                     ),
                   ],
                   selectedIndex: selectedIndex,
@@ -99,7 +93,9 @@ var token = ValueNotifier("");
                     });
                   },
                 ),
-              ),
+          body: Row(
+            children: [
+              SafeArea(child: Text("")),
               Expanded(
                 child: Container(
                   color: Theme.of(context).colorScheme.primaryContainer,
@@ -114,74 +110,3 @@ var token = ValueNotifier("");
   }
 }
 
-
-class GeneratorPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    var pair = appState.current;
-
-    IconData icon;
-    if (appState.favorites.contains(pair)) {
-      icon = Icons.favorite;
-    } else {
-      icon = Icons.favorite_border;
-    }
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          BigCard(pair: pair),
-          SizedBox(height: 10),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  appState.toggleFavorite();
-                },
-                icon: Icon(icon),
-                label: Text('Like'),
-              ),
-              SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: () {
-                  appState.getNext();
-                },
-                child: Text('Next'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class BigCard extends StatelessWidget {
-  const BigCard({
-    super.key,
-    required this.pair,
-  });
-
-  final WordPair pair;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context); 
-    final style = theme.textTheme.displayMedium!.copyWith(
-      color: theme.colorScheme.onPrimary,
-    ); 
-
-
-
-    return Card(
-      color: theme.colorScheme.primary,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Text("${pair.first} ${pair.second}", style: style),
-      ),
-    );
-  }
-}

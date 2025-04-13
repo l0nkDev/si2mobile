@@ -1,13 +1,37 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 
 class Login extends StatelessWidget{
-  final ValueListenable<String> token;
+  final Function setToken;
 
-  Login(this.token);
+  Login(this.setToken);
+
+
+
+  Future<void> sendLogin(String email, String password, BuildContext context) async {
+    Map<String,String> headers = {
+      'Content-type' : 'application/json', 
+      'Accept': 'application/json',
+    };
+    
+      var response = await http.post(Uri.https("dismac-backend.up.railway.app", 'auth/login/email'), 
+      headers: headers,
+      body: 
+      '''
+        {
+          "email": "$email",
+          "password": "$password"
+        }
+    '''
+    );
+    print(response.body);
+    var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Sesión iniciada correctamente como user ${decodedResponse["user_id"]}")),
+    );
+    setToken(decodedResponse["access_token"], decodedResponse["refresh_token"]);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +53,7 @@ class Login extends StatelessWidget{
               FilledButton(
                 child: Text("Iniciar sesión"),
                 onPressed: () {
-                  sendLogin(email.value.text, passwd.value.text, context, token);
+                  sendLogin(email.value.text, passwd.value.text, context);
                 })
             ],
           ),
@@ -37,32 +61,6 @@ class Login extends StatelessWidget{
       ),
       );
   }
-}
-
-Future<void> sendLogin(String email, String password, BuildContext context, ValueListenable<String> token) async {
-
-      Map<String,String> headers = {
-      'Content-type' : 'application/json', 
-      'Accept': 'application/json',
-    };
-    
-      var response = await http.post(Uri.https("dismac-backend.up.railway.app", 'auth/login/email'), 
-      headers: headers,
-      body: 
-      '''
-        {
-          "email": "$email",
-          "password": "$password"
-        }
-    '''
-    );
-    print(response.body);
-    var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Sesión iniciada correctamente como user ${decodedResponse["user_id"]}")),
-    );
-    token.value = decodedResponse["access_token"];
-    print(context.watch().token);
 }
 
 class LabeledInput extends StatelessWidget {
