@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:si2mobile/firebase_api.dart';
+import '../../components/labeledInput.dart';
 
 class Login extends StatelessWidget{
   final Function setToken;
-
-  Login(this.setToken);
+  final Function goto;
+  const Login(this.setToken, this.goto, {super.key});
 
 
 
@@ -15,7 +17,7 @@ class Login extends StatelessWidget{
       'Accept': 'application/json',
     };
     
-      var response = await http.post(Uri.https("dismac-backend.up.railway.app", 'auth/login/email'), 
+      var response = await http.post(Uri.https("smart-cart-backend.up.railway.app", 'api/auth/login/'), 
       headers: headers,
       body: 
       '''
@@ -28,9 +30,10 @@ class Login extends StatelessWidget{
     print(response.body);
     var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Sesión iniciada correctamente como user ${decodedResponse["user_id"]}")),
+      SnackBar(content: Text("Sesión iniciada correctamente.")),
     );
-    setToken(decodedResponse["access_token"], decodedResponse["refresh_token"]);
+    setToken(decodedResponse["access"]);
+    goto(0);
 }
 
   @override
@@ -54,42 +57,18 @@ class Login extends StatelessWidget{
                 child: Text("Iniciar sesión"),
                 onPressed: () {
                   sendLogin(email.value.text, passwd.value.text, context);
+                }),
+              SizedBox(height: 32,),
+              Text("No tienes cuenta?"),
+              OutlinedButton(
+                child: Text("Registrate"),
+                onPressed: () {
+                  goto(5);
                 })
             ],
           ),
         ),
       ),
       );
-  }
-}
-
-class LabeledInput extends StatelessWidget {
-    const LabeledInput({
-    super.key,
-    required this.label,
-    required this.controller
-    });
-
-    final String label;
-    final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                TextField(
-                  controller: controller,
-                  decoration: 
-                  InputDecoration(
-                    label: Text(label),
-                    border: OutlineInputBorder()
-                    ),
-                )
-              ],
-            ),
-          );
   }
 }
