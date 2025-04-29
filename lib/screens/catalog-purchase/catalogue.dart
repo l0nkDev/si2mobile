@@ -215,9 +215,20 @@ class _CatalogueState extends State<Catalogue> {
   );
 
   addToCart(Map prod, BuildContext context) async {
-    var response = await http.post(Uri.parse("http://l0nk5erver.duckdns.org:5000/users/cart/add"), 
+    print("prod is: $prod");
+    var response = await http.post(Uri.parse("https://smart-cart-backend.up.railway.app/api/orders/finance/"), 
       headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'},
-      body: '{"id": "${prod["id"]}"}'
+      body: '''
+          {
+            "currency": "USD",
+            "items": [
+              {
+                "product_id": ${prod["id"]},
+                "quantity": 1
+              }
+            ]
+          }
+            '''
     );
     print(response.body);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\"${prod["name"]}\" fue agregado al carrito.")));

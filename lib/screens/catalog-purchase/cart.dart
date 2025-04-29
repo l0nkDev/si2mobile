@@ -21,14 +21,19 @@ class _CartState extends State<CartScreen> {
   double? total;
   late Future<dynamic> cartsFuture;
   String vip = '';
+  int cartid = 0;
   TextEditingController search = TextEditingController();
 
   Future<dynamic> getCart() async {
     final response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/orders/finance/"),headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"});
     var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
     var items = decodedResponse["items"];
+    print(items);
     for (var item in items) {
-      if (item['payment'] != null) return item;
+      if (item['payment'] == null) {
+        cartid = item["id"];
+        return item;
+      }
     }
     return null;
   }
@@ -82,7 +87,6 @@ class _CartState extends State<CartScreen> {
   }
 
   emptyCart() async {
-    double sum = 0;
     final response = await http.delete(Uri.parse("http://l0nk5erver.duckdns.org:5000/users/cart"),
     headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: "application/json"}
     );
@@ -92,13 +96,19 @@ class _CartState extends State<CartScreen> {
     cartsFuture = getCart();
   }
 
-  payCart() async {
-    final response = await http.get(Uri.parse("http://l0nk5erver.duckdns.org:5000/stripe/checkout"),
-    headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"}
+  payCart(int id) async {
+    final response = await http.post(Uri.parse("https://smart-cart-backend.up.railway.app/api/orders/stripe-checkout/"),
+    headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: "application/json"},
+    body:
+    '''
+    {
+      "order_id": "$id"
+    }
+    '''
     );
     print(utf8.decode(response.bodyBytes));
     var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
-    _launchUrl(Uri.parse(decodedResponse["url"]));
+    _launchUrl(Uri.parse(decodedResponse["checkout_url"]));
     widget.goto(0);
   }
 
@@ -137,7 +147,7 @@ class _CartState extends State<CartScreen> {
                     Row(mainAxisSize: MainAxisSize.min,
                       children: [
                         ElevatedButton(onPressed: widget.isLogged ? () {emptyCart();} : null, child: Text("Vaciar carrito")),
-                        ElevatedButton(onPressed: widget.isLogged ? () {payCart();} : null, child: Text("Pagar")),
+                        ElevatedButton(onPressed: widget.isLogged ? () {print("Cart id es: $cartid"); payCart(cartid);} : null, child: Text("Pagar")),
                       ],
                     ),
                   ],
@@ -151,7 +161,7 @@ class _CartState extends State<CartScreen> {
   }
 
   Widget buildCart(dynamic cartitems, bool isLogged) => ListView.builder(
-    itemCount: cartitems.length,
+    itemCount: cartitems["items"].length,
     itemBuilder: (context, index) {
       final tmp = cartitems["items"] as List<dynamic>;
       final item = tmp[index];
@@ -175,11 +185,48 @@ class cartItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(item["quantity"]);
+    print(item["id"]);
     quantity.value = TextEditingValue(text: "${item["quantity"]}");
     return Card(
       child: Column(
         children: [
           ListTile(
+              leading: Image.network(item["product"]["image_url"],
+                  loadingBuilder: (BuildContext context, Widget child,
+                      ImageChunkEvent? loadingProgress) {
+                    final totalBytes = loadingProgress?.expectedTotalBytes;
+                    final bytesLoaded =
+                        loadingProgress?.cumulativeBytesLoaded;
+                    if (totalBytes != null && bytesLoaded != null) {
+                      return CircularProgressIndicator(
+                        backgroundColor: Colors.white70,
+                        value: bytesLoaded / totalBytes,
+                        color: Colors.blue[900],
+                        strokeWidth: 5.0,
+                      );
+                    } else {
+                      return child;
+                    }
+                  },
+                  frameBuilder: (BuildContext context, Widget child,
+                      int? frame, bool wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) {
+                      return child;
+                    }
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(seconds: 1),
+                      curve: Curves.easeOut,
+                      child: child,
+                    );
+                  },
+                  fit: BoxFit.cover,
+                  errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+         
+                   return const Text('😢');
+                  },
+                ),
             title: Text(item["product"]["name"]),
             subtitle: Text(item["product"]["brand"]["name"]),
           ),
