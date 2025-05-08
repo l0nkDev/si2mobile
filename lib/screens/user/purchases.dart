@@ -21,41 +21,11 @@ class _PurchasesState extends State<Purchases> {
   TextEditingController search = TextEditingController();
 
   Future<List> getProducts() async {
-    var purchases = [];
-    print("started");
-    final response = await http.get(Uri.parse("http://l0nk5erver.duckdns.org:5000/users/purchases"), headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"});
-    final body = jsonDecode(utf8.decode(response.bodyBytes)) as List;
-    for (var item in body) {
-      var items = [];
-      for (var purchase in item["items"]) {
-        items.add(
-          {
-            "id": purchase["id"],
-            "productid": purchase["productid"],
-            "name": purchase["name"],
-            "brand": purchase["brand"],
-            "rating": purchase["rating"],
-            "price": purchase["price"],
-            "dprice": purchase["dprice"],
-            "fprice": purchase["fprice"],
-            "quantity": purchase["quantity"],
-          }
-        );
-      }
-      purchases.add(
-        {
-          "id": item["id"],
-          "paid_on": item["paid_on"],
-          "payment_method": item["payment_method"],
-          "delivery_status": item["delivery_status"],
-          "rating": item["rating"],
-          "total_paid": item["total_paid"],
-          "vip": item["vip"],
-          "items": items
-        }
-      );
-    }
-    return purchases;
+    final response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/orders/finance/"),headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"});
+    var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
+    var items = decodedResponse["items"];
+    print(items);
+    return items;
   }
 
   @override
@@ -147,71 +117,61 @@ class PurchaseCard extends StatelessWidget {
       child: Column(
         children: [
           ListTile(
-            //leading: Image.network("http://l0nk5erver.duckdns.org:5000/products/img/${product.id}.png"),
-            title: Text(product["paid_on"]),
-            subtitle: Text(product["delivery_status"]),
+            title: Text("Pedido #${product["id"]}"),
           ),
-          Row(
+          for (dynamic item in product["items"]) Column(
             children: [
-              SizedBox(width: 15,),
-              Text(product["vip"] != 'Y' ? "\$${product["total_paid"]}" : ''),
-              Text(product["vip"] == 'Y' ? "\$${product["total_paid"]}" : '', style: TextStyle(decoration: TextDecoration.lineThrough)),
-              Text(product["vip"] == 'Y' ? "     Descuento 15% VIP: \$${double.parse(product["total_paid"])*0.85}" : ''),
+              Row(
+                children: [
+                  SizedBox(width: 15,),
+                  Text(item["product"]["name"]),
+                ],
+              ),
+              Row(
+                children: [
+                  SizedBox(width: 15,),
+                  Text("x${item["quantity"]}"),
+                ],
+              ),
+              SizedBox(height: 15,),
             ],
           ),
           Row(
             children: [
               SizedBox(width: 15,),
-              Text(product["payment_method"]),
-            ],
-          ),
-          Row(
-            children: [
-              SizedBox(width: 15,),
-              Text("✰${product["rating"]}"),
+              Text("Total: \$${product["total_amount"]}"),
             ],
           ),
           SizedBox(height: 15,),
-          for (var item in product["items"]) 
-            Column(
-              children: [
-                Row(
-                  children: [
+          Row(
+            children: [
               SizedBox(width: 15,),
-                    Text(item["name"]),
-                  ],
-                ),
-                Row(
-                  children: [
-              SizedBox(width: 15,),
-                    Text(item["brand"]),
-                  ],
-                ),
-                Row(
-                  children: [
-              SizedBox(width: 15,),
-                    Text("✰${item["rating"]}"),
-                  ],
-                ),
-              SizedBox(height: 15,),
-              ],
-            ),
-          Padding(
-            padding: const EdgeInsets.only(left: 15, right: 15),
-            child: Row(
-              children: [
-                Expanded(child: TextField(controller: quantity)),
-                ElevatedButton(
-                  onPressed: () {rate(product["id"], double.parse(quantity.value.text));}, 
-                  child: Text("Enviar Calificacion"), 
-                  ),
-              ],
-            ),
+              Text("Metodo de pago: ${product["payment"]["payment_method"]}"),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () { _launchUrl(Uri.parse("http://l0nk5erver.duckdns.org:5000/facturas/${product["id"]}"));}, 
-            child: Text("Ver factura"), 
-            ), 
+          SizedBox(height: 15,),
+          Row(
+            children: [
+              SizedBox(width: 15,),
+              Text("Estado de pago: ${product["payment"]["payment_status"]}"),
+            ],
+          ),
+          Row(
+            children: [
+              SizedBox(width: 15,),
+              Text("Estado del pedido: ${product["delivery"]["status_display"]}     "),
+            ],
+          ),
+          SizedBox(height: 15,),
+          Row(
+            children: [
+              SizedBox(width: 15,),
+              Text("Marcar como: "),
+              ElevatedButton(child: Text("En Reparto"), onPressed: () {}),
+              ElevatedButton(child: Text("Entregado"), onPressed: () {})
+            ],
+          ),
+          SizedBox(height: 30,),
         ],
       )
     );
