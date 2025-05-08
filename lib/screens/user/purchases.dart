@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../models/purchase.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class Purchases extends StatefulWidget{
   final String? token;
@@ -79,17 +77,19 @@ class _PurchasesState extends State<Purchases> {
     itemBuilder: (context, index) {
       final product = products[index];
 
-      return PurchaseCard(product: product, rate: rateDelivery);
+      return PurchaseCard(product: product, rate: rateDelivery, set: setDelivery);
     }
   );
 
-  addToCart(Purchase prod, BuildContext context) async {
-    var response = await http.post(Uri.parse("http://l0nk5erver.duckdns.org:5000/users/cart/add"), 
+  
+  setDelivery(int order, String status) async {
+    var response = await http.patch(Uri.parse("https://smart-cart-backend.up.railway.app/api/orders/deliveries/$order/"), 
       headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'},
-      body: '{"id": "${prod.id}"}'
+      body: '{"delivery_status": "$status"}'
     );
     print(response.body);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("\"${prod.delivery_status}\" fue agregado al carrito.")));
+    productsFuture = getProducts();
+    setState(() {});
   }
 }
 
@@ -98,17 +98,13 @@ class PurchaseCard extends StatelessWidget {
     super.key,
     required this.product,
     required this.rate,
+    required this.set,
   });
 
   final dynamic product;
   final Function rate;
+  final Function set;
   final TextEditingController quantity = TextEditingController();
-
-  Future<void> _launchUrl(url) async {
-    if (!await launchUrl(url)) {
-      throw Exception('Could not launch $url');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,8 +163,21 @@ class PurchaseCard extends StatelessWidget {
             children: [
               SizedBox(width: 15,),
               Text("Marcar como: "),
-              ElevatedButton(child: Text("En Reparto"), onPressed: () {}),
-              ElevatedButton(child: Text("Entregado"), onPressed: () {})
+            ],
+          ),
+          Row(
+            children: [
+              SizedBox(width: 15,),
+              ElevatedButton(child: Text("Pendiente"), onPressed: () {set(product["id"], "pending");}),
+              ElevatedButton(child: Text("Procesando"), onPressed: () {set(product["id"], "processing");}),
+              ElevatedButton(child: Text("En Reparto"), onPressed: () {set(product["id"], "out_for_delivery");}),
+            ],
+          ),
+          Row(
+            children: [
+              SizedBox(width: 15,),
+              ElevatedButton(child: Text("Entregado"), onPressed: () {set(product["id"], "delivered");}),
+              ElevatedButton(child: Text("Fallido"), onPressed: () {set(product["id"], "failed");}),
             ],
           ),
           SizedBox(height: 30,),
