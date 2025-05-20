@@ -109,13 +109,16 @@ class PurchaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     quantity.value = TextEditingValue(text: '5');
+    if (product["payment"] == null) return SizedBox();
     return Card(
       child: Column(
         children: [
           ListTile(
             title: Text("Pedido #${product["id"]}"),
           ),
-          for (dynamic item in product["items"]) Column(
+          for (dynamic item in product["items"]) 
+          if (item["payment"] != null)
+          Column(
             children: [
               Row(
                 children: [
@@ -155,7 +158,8 @@ class PurchaseCard extends StatelessWidget {
           Row(
             children: [
               SizedBox(width: 15,),
-              Text("Estado del pedido: ${product["delivery"]["status_display"]}     "),
+              if(product["delivery"] == null) Text("Estado del pedido:   Ninguno")
+              else Text("Estado del pedido: ${product["delivery"]["status_display"]}     "),
             ],
           ),
           SizedBox(height: 15,),

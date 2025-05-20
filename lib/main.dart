@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:si2mobile/firebase_api.dart';
 import 'package:si2mobile/firebase_options.dart';
-import 'package:si2mobile/screens/user/profile.dart';
+import 'package:si2mobile/screens/user/feedback.dart';
 import 'screens/auth-session/login.dart';
 import 'screens/auth-session/register.dart';
 import 'screens/catalog-purchase/cart.dart';
@@ -119,7 +119,7 @@ String refreshToken = "";
     case 5:
       page = Register(setToken, goto);
     case 6:
-      page = Profile(token);
+      page = UserFeedback();
   default:
     throw UnimplementedError('no widget for $selectedIndex');
 }
