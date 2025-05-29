@@ -118,8 +118,8 @@ String refreshToken = "";
       page = ProductScreen(isLogged: isLogged, token: token, goto: goto, productid: product,);
     case 5:
       page = Register(setToken, goto);
-    case 6:
-      page = UserFeedback();
+    case 6: 
+      page = UserFeedback(product, token);
   default:
     throw UnimplementedError('no widget for $selectedIndex');
 }

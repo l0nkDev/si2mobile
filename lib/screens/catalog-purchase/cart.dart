@@ -30,7 +30,7 @@ class _CartState extends State<CartScreen> {
     var items = decodedResponse["items"];
     print(items);
     for (var item in items) {
-      if (item['payment'] == null) {
+      if (item['payment'] == null || item['payment']['payment_status'] == 'processing') {
         cartid = item["id"];
         return item;
       }
@@ -229,12 +229,6 @@ class cartItem extends StatelessWidget {
                 ),
             title: Text(item["product"]["name"]),
             subtitle: Text(item["product"]["brand"]["name"]),
-          ),
-          Row(
-            children: [
-              SizedBox(width: 15),
-              Text(item["product"]["description"]),
-            ],
           ),
           Row(
             children: [

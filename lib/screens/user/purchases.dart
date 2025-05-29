@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class Purchases extends StatefulWidget{
   final String? token;
@@ -76,8 +78,7 @@ class _PurchasesState extends State<Purchases> {
     itemCount: products.length,
     itemBuilder: (context, index) {
       final product = products[index];
-
-      return PurchaseCard(product: product, rate: rateDelivery, set: setDelivery);
+      return PurchaseCard(product: product, rate: rateDelivery, set: setDelivery, get:getReceipt, goto:widget.goto,);
     }
   );
 
@@ -91,6 +92,44 @@ class _PurchasesState extends State<Purchases> {
     productsFuture = getProducts();
     setState(() {});
   }
+
+  void getReceipt(int id, {bool attempted = false}) async {
+    http.Response response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/reports/"),headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"});
+    Map decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
+    List items = decodedResponse["items"];
+    for (Map item in items) {
+      if (item['format'] == 'pdf' && item['report_type'] == 'order_receipt' && item['report_data'] != null && item['report_data']['order'] != null && item['report_data']['order']['order_id'] == id) {
+        _launchUrl(item['file_path']);
+        print('found');
+        return;
+      }
+    }
+    print('failed');
+    if (!attempted) createReceipt(id);
+  }
+
+  void createReceipt(int id) async {
+    http.Response response = await http.post(Uri.parse("https://smart-cart-backend.up.railway.app/api/reports/"), 
+      headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'},
+      body: '''
+          {
+            "name": "Recibo de mi pedido", 
+            "report_type": "order_receipt", 
+            "format": "pdf", 
+            "language": "es", 
+            "order_id": $id
+          }
+            '''
+    );
+    if (response.statusCode != 200) { print(response.body); return; }
+    getReceipt(id, attempted: true);
+  }
+
+  Future<void> _launchUrl(String url) async {
+    if (!await launchUrl(Uri.parse(url))) {
+      throw Exception('Could not launch $url');
+    }
+  }
 }
 
 class PurchaseCard extends StatelessWidget {
@@ -99,22 +138,34 @@ class PurchaseCard extends StatelessWidget {
     required this.product,
     required this.rate,
     required this.set,
+    required this.get,
+    required this.goto,
   });
 
   final dynamic product;
   final Function rate;
   final Function set;
+  final Function get;
+  final Function goto;
   final TextEditingController quantity = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     quantity.value = TextEditingValue(text: '5');
     if (product["payment"] == null) return SizedBox();
+    if (product["delivery"] == null) return SizedBox();
     return Card(
       child: Column(
         children: [
           ListTile(
-            title: Text("Pedido #${product["id"]}"),
+            title: Row(
+              children: [
+                Text("Pedido #${product["id"]}"),
+                Spacer(),
+              if (product["delivery"]["delivery_status"] == 'delivered') ElevatedButton(child: Text("Feedback"), onPressed: () { goto(6, y: product["id"]); }),
+              ElevatedButton(child: Text("Factura"), onPressed: () {get(product["id"]);}),
+              ],
+            ),
           ),
           for (dynamic item in product["items"]) 
           if (item["payment"] != null)

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -37,15 +38,19 @@ class _CatalogueState extends State<Catalogue> {
   }
 
   Future<List<dynamic>> getProducts(int page, String query) async {
-    late dynamic response;
-    if (query == '') {response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/products?page=$page"), 
-      headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'});}
-    else {response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/products?search=$query&page=$page"), 
-      headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'});}
-    var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
-    print(decodedResponse);
-    if (decodedResponse["detail"] != null) return [];
-    return decodedResponse["items"];
+    if (query == '') {
+      http.Response response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/products?page=$page"), 
+        headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'});
+        Map decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        return response.statusCode == 200 ? decoded["items"] : [];
+        }
+    else {
+      if (page != 1) return [];
+      http.Response response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/products/similar/?query=$query&count=8"), 
+        headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'});
+      List decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      return decoded;
+      }
   }
 
     @override
@@ -183,12 +188,7 @@ class _CatalogueState extends State<Catalogue> {
             ),
             Row(
               children: [SizedBox(width: 15,),
-                Text(product["description"]),
-              ],
-            ),
-            Row(
-              children: [SizedBox(width: 15,),
-                Text("✰${product["average_rating"]}"),
+                Text("✰${product["average_rating"] ?? "---"}"),
               ],
             ),
             Row(
@@ -215,7 +215,6 @@ class _CatalogueState extends State<Catalogue> {
   );
 
   addToCart(Map prod, BuildContext context) async {
-    print("prod is: $prod");
     var response = await http.post(Uri.parse("https://smart-cart-backend.up.railway.app/api/orders/finance/"), 
       headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'},
       body: '''

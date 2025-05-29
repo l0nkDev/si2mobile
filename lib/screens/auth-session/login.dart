@@ -28,12 +28,18 @@ class Login extends StatelessWidget{
     '''
     );
     print(response.body);
-    var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Sesión iniciada correctamente.")),
-    );
-    setToken(decodedResponse["access"]);
-    goto(0);
+    if (response.statusCode == 200) {
+      var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Sesión iniciada correctamente.")),
+      );
+      setToken(decodedResponse["access"]);
+      goto(0);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("No se pudo iniciar sesión.")),
+      );
+    }
 }
 
   @override
