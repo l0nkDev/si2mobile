@@ -1,12 +1,11 @@
-import 'dart:io';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:si2mobile/firebase_api.dart';
 import 'package:si2mobile/firebase_options.dart';
+import 'package:si2mobile/screens/chatbot/chat.dart';
+import 'package:si2mobile/screens/chatbot/list.dart';
 import 'package:si2mobile/screens/user/feedback.dart';
 import 'screens/auth-session/login.dart';
 import 'screens/auth-session/register.dart';
@@ -17,8 +16,8 @@ import 'screens/user/purchases.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseApi().initNotifications();
+  //await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  //await FirebaseApi().initNotifications();
   runApp(MyApp());
 }
 
@@ -55,15 +54,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
 var selectedIndex = 1;
 var product = 0;
+var user = 0;
 bool isLogged = false;
 late SharedPreferences prefs;
 String token = "";
+String chattoken = "";
 String refreshToken = "";
 
   void setToken(String newToken) {
     token = newToken;
     isLogged = true;
     prefs.setString('token', token);
+  }
+
+  void setUser(int id) {
+    user = id;
+  }
+
+  void setChat(String token) {
+    chattoken = token;
   }
 
   void goto(int n, {int y = 0}) { setState(() { 
@@ -86,19 +95,11 @@ String refreshToken = "";
   }
 
   logout() async {
-    await http.post(Uri.http("l0nk5erver.duckdns.org:5000", 'auth/logout'), 
-      headers: {HttpHeaders.authorizationHeader: "Bearer $token", HttpHeaders.contentTypeHeader: 'application/json'},
-      body: 
-      '''
-        {
-          "fcm": "${await FirebaseApi().initNotifications()}"
-        }
-    '''
-    );
     token = ""; 
+    user = 0; 
     isLogged = false;
     prefs.setString('token', '');
-    selectedIndex = 0; 
+    selectedIndex = 1; 
     setState(() {});
   }
 
@@ -109,7 +110,7 @@ String refreshToken = "";
     case 0:
       page = Catalogue(isLogged: isLogged, token: token, goto: goto,);
     case 1:
-      page = Login(setToken, goto);
+      page = Login(setToken, setUser, goto);
     case 2:
       page = CartScreen(isLogged: isLogged, token: token, goto: goto);
     case 3:
@@ -120,6 +121,10 @@ String refreshToken = "";
       page = Register(setToken, goto);
     case 6: 
       page = UserFeedback(product, token);
+    case 7: 
+      page = ChatList(token: token, goto: goto, setchat: setChat, user: user);
+    case 8: 
+      page = Basic(token: token, goto: goto, user: user, chatid: product, chattoken: chattoken);
   default:
     throw UnimplementedError('no widget for $selectedIndex');
 }
@@ -181,6 +186,18 @@ String refreshToken = "";
                           Icon(Icons.person),
                           SizedBox(height: 64, width: 10,),
                           Text("Perfil de usuario"),
+                        ],
+                      ),
+                    ),
+                  if (isLogged)
+                    InkWell(
+                      onTap: () {setState(() {selectedIndex = 7; Navigator.pop(context);});},
+                      child: Row(
+                        children: [
+                          SizedBox(height: 64, width: 10,),
+                          Icon(Icons.person),
+                          SizedBox(height: 64, width: 10,),
+                          Text("Chatbot"),
                         ],
                       ),
                     ),

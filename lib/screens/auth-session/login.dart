@@ -6,8 +6,9 @@ import '../../components/labeledInput.dart';
 
 class Login extends StatelessWidget{
   final Function setToken;
+  final Function setUser;
   final Function goto;
-  const Login(this.setToken, this.goto, {super.key});
+  const Login(this.setToken, this.setUser, this.goto, {super.key});
 
 
 
@@ -34,6 +35,7 @@ class Login extends StatelessWidget{
         SnackBar(content: Text("Sesión iniciada correctamente.")),
       );
       setToken(decodedResponse["access"]);
+      setUser(decodedResponse["id"]);
       goto(0);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
