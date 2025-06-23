@@ -6,40 +6,69 @@ import '../../components/labeledInput.dart';
 
 class Register extends StatelessWidget{
   final Function setToken;
+  final Function setUser;
   final Function goto;
-  const Register(this.setToken, this.goto, {super.key});
+  const Register(this.setToken, this.setUser, this.goto, {super.key});
 
 
 
-  Future<void> sendRegistration(String email, String password, String name, String lname, String country, String state, String address, BuildContext context) async {
+  Future<void> sendRegistration(String email, String password, String name, String lname, BuildContext context) async {
     Map<String,String> headers = {
       'Content-type' : 'application/json', 
       'Accept': 'application/json',
     };
     
-      var response = await http.post(Uri.http("l0nk5erver.duckdns.org:5000", 'auth/register'), 
+    var response = await http.post(Uri.parse('https://smart-cart-backend.up.railway.app/api/auth/users/'), 
       headers: headers,
       body: 
       '''
         {
+          "active": true,
           "email": "$email",
+          "first_name": "$name",
+          "is_staff": true,
+          "is_superuser": false,
+          "last_name": "$lname",
           "password": "$password",
-          "name": "$name",
-          "lname": "$lname",
-          "country": "$country",
-          "state": "$state",
-          "address": "$address",
-          "fcm": "${await FirebaseApi().initNotifications()}"
+          "role": "customer"
         }
     '''
     );
-    print(response.body);
+    sendLogin(email, password, context);
+}
+
+
+
+Future<void> sendLogin(String email, String password, BuildContext context) async {
+  Map<String,String> headers = {
+    'Content-type' : 'application/json', 
+    'Accept': 'application/json',
+  };
+  
+    var response = await http.post(Uri.https("smart-cart-backend.up.railway.app", 'api/auth/login/'), 
+    headers: headers,
+    body: 
+    '''
+      {
+        "email": "$email",
+        "password": "$password"
+      }
+  '''
+  );
+  print(response.body);
+  if (response.statusCode == 200) {
     var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Sesión iniciada correctamente como user ${decodedResponse["id"]}")),
+      SnackBar(content: Text("Sesión iniciada correctamente.")),
     );
-    setToken(decodedResponse["access_token"]);
+    setToken(decodedResponse["access"]);
+    setUser(decodedResponse["id"]);
     goto(0);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("No se pudo iniciar sesión.")),
+    );
+  }
 }
 
   @override
@@ -51,9 +80,6 @@ class Register extends StatelessWidget{
     TextEditingController passwd = TextEditingController();
     TextEditingController name = TextEditingController();
     TextEditingController lname = TextEditingController();
-    TextEditingController country = TextEditingController();
-    TextEditingController state = TextEditingController();
-    TextEditingController address = TextEditingController();
 
     return Scaffold(
       body: Card(
@@ -63,18 +89,15 @@ class Register extends StatelessWidget{
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(height: 32,),
-                  Text("Registro de usuario", style: style),
-                  LabeledInput(label: "e-mail", controller: email,),
-                  LabeledInput(label: "Contraseña", controller: passwd),
+                  Text("Crear cuenta", style: style),
                   LabeledInput(label: "Nombre", controller: name),
                   LabeledInput(label: "Apellido", controller: lname),
-                  LabeledInput(label: "Pais", controller: country),
-                  LabeledInput(label: "Estado/Departamento", controller: state),
-                  LabeledInput(label: "Dirección", controller: address),
+                  LabeledInput(label: "e-mail", controller: email,),
+                  LabeledInput(label: "Contraseña", controller: passwd),
                   FilledButton(
                     child: Text("Registrate!"),
                     onPressed: () {
-                      sendRegistration(email.value.text, passwd.value.text, name.value.text, lname.value.text, country.value.text, state.value.text, address.value.text, context);
+                      sendRegistration(email.value.text, passwd.value.text, name.value.text, lname.value.text, context);
                     }),
                   SizedBox(height: 32,),
                   Text("Ya tienes cuenta?"),

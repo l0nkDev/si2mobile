@@ -59,6 +59,7 @@ late SharedPreferences prefs;
 String token = "";
 String chattoken = "";
 String refreshToken = "";
+String itemurl = "";
 
   void setToken(String newToken) {
     token = newToken;
@@ -72,6 +73,10 @@ String refreshToken = "";
 
   void setChat(String token) {
     chattoken = token;
+  }
+
+  void setItemUrl(String url) {
+    itemurl = url;
   }
 
   void goto(int n, {int y = 0}) { setState(() { 
@@ -107,7 +112,7 @@ String refreshToken = "";
   Widget page;
   switch (selectedIndex) {
     case 0:
-      page = Catalogue(isLogged: isLogged, token: token, goto: goto,);
+      page = Catalogue(isLogged: isLogged, token: token, goto: goto, setItemUrl: setItemUrl);
     case 1:
       page = Login(setToken, setUser, goto);
     case 2:
@@ -117,7 +122,7 @@ String refreshToken = "";
     case 4:
       page = ProductScreen(isLogged: isLogged, token: token, goto: goto, productid: product,);
     case 5:
-      page = Register(setToken, goto);
+      page = Register(setToken, setUser, goto);
     case 6: 
       page = UserFeedback(product, token);
     case 7: 
@@ -127,7 +132,7 @@ String refreshToken = "";
     case 9: 
       page = Profile(token);
     case 10: 
-      page = DebugOptions();
+      page = DebugOptions(itemurl: itemurl);
   default:
     throw UnimplementedError('no widget for $selectedIndex');
 }
@@ -141,33 +146,18 @@ String refreshToken = "";
               children: [
               Column(
                 children: [
-                  InkWell(
-                    onTap: () {setState(() {
-                      if (isLogged) {
-                        logout();
-                      } else { selectedIndex = 1; }
-                      Navigator.pop(context);
-                      });},
-                    child: Row(
-                      children: [
-                        SizedBox(height: 64, width: 10,),
-                        Icon(isLogged ? Icons.logout : Icons.login),
-                        SizedBox(height: 64, width: 10,),
-                        Text(isLogged ? "Cerrar sesion" : "Iniciar Sesion"),
-                      ],
+                  if (isLogged)
+                    InkWell(
+                      onTap: () {setState(() {selectedIndex = 0; Navigator.pop(context);});},
+                      child: Row(
+                        children: [
+                          SizedBox(height: 64, width: 10,),
+                          Icon(Icons.shopping_bag_outlined),
+                          SizedBox(height: 64, width: 10,),
+                          Text("Catalogo"),
+                        ],
+                      ),
                     ),
-                  ),
-                  InkWell(
-                    onTap: () {setState(() {selectedIndex = 0; Navigator.pop(context);});},
-                    child: Row(
-                      children: [
-                        SizedBox(height: 64, width: 10,),
-                        Icon(Icons.shopping_bag_outlined),
-                        SizedBox(height: 64, width: 10,),
-                        Text("Catalogo"),
-                      ],
-                    ),
-                  ),
                   if (isLogged)
                     InkWell(
                       onTap: () {setState(() {selectedIndex = 3; Navigator.pop(context);});},
@@ -192,26 +182,19 @@ String refreshToken = "";
                         ],
                       ),
                     ),
-                  if (isLogged)
-                    InkWell(
-                      onTap: () {setState(() {selectedIndex = 7; Navigator.pop(context);});},
-                      child: Row(
-                        children: [
-                          SizedBox(height: 64, width: 10,),
-                          Icon(Icons.person),
-                          SizedBox(height: 64, width: 10,),
-                          Text("Chatbot"),
-                        ],
-                      ),
-                    ),
                   InkWell(
-                    onTap: () {setState(() {selectedIndex = 10; Navigator.pop(context);});},
+                    onTap: () {setState(() {
+                      if (isLogged) {
+                        logout();
+                      } else { selectedIndex = 1; }
+                      Navigator.pop(context);
+                      });},
                     child: Row(
                       children: [
                         SizedBox(height: 64, width: 10,),
-                        Icon(Icons.person),
+                        Icon(isLogged ? Icons.logout : Icons.login),
                         SizedBox(height: 64, width: 10,),
-                        Text("AR"),
+                        Text(isLogged ? "Cerrar sesion" : "Iniciar Sesion"),
                       ],
                     ),
                   ),

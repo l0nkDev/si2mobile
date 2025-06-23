@@ -9,7 +9,8 @@ class Catalogue extends StatefulWidget{
   final String? token;
   final bool isLogged;
   final Function goto;
-  const Catalogue({super.key, this.token, required this.isLogged, required this.goto});
+  final Function setItemUrl;
+  const Catalogue({super.key, this.token, required this.isLogged, required this.goto, required this.setItemUrl});
 
   @override
   State<Catalogue> createState() => _CatalogueState();
@@ -90,6 +91,14 @@ class _CatalogueState extends State<Catalogue> {
     loadNextPage();
   }
 
+    void recommend(String query) {
+      setState(() { search.value = TextEditingValue(text: query); });
+      products = [];
+      nextPage = 1;
+      itemCount.value = 0;
+      loadNextPage();
+    }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,15 +121,19 @@ class _CatalogueState extends State<Catalogue> {
                       nextPage = 1;
                       itemCount.value = 0;
                       loadNextPage();
-                      }, child: Text("Search")),
-                    ElevatedButton(onPressed: widget.isLogged ? () {widget.goto(2);} : null, child: Text("Carrito")),
+                      }, child: Icon(Icons.search)),
+                    ElevatedButton(
+        onPressed:
+            _speechToText.isNotListening ? _startListening : _stopListening,
+        child: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic),),
+                    ElevatedButton(onPressed: widget.isLogged ? () {widget.goto(2);} : null, child: Icon(Icons.shopping_cart)),
                   ],
                 ),
                 Expanded(
                   child: ValueListenableBuilder<int>(
                     valueListenable: itemCount,
                     builder: (BuildContext context, int value, Widget? child) {
-                      return buildProducts(products, widget.isLogged, widget.goto);
+                      return buildProducts(products, widget.isLogged, widget.goto, widget.setItemUrl, recommend);
                     }
                   ),
                 )
@@ -130,15 +143,13 @@ class _CatalogueState extends State<Catalogue> {
         }
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed:
-            _speechToText.isNotListening ? _startListening : _stopListening,
-        tooltip: 'Listen',
-        child: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic),
+        onPressed: () {widget.goto(7);},
+        child: Icon(Icons.chat),
       )
     );
   }
 
-  Widget buildProducts(List<dynamic> products, bool isLogged, Function goto) => ListView.builder(
+  Widget buildProducts(List<dynamic> products, bool isLogged, Function goto, Function setItemUrl, Function recommend) => ListView.builder(
       itemCount: itemCount.value,
       itemBuilder: (context, index) {
       final product = getProductAtIndex(index);
@@ -198,14 +209,18 @@ class _CatalogueState extends State<Catalogue> {
             Row( mainAxisSize: MainAxisSize.min,
               children: [
                 ElevatedButton(
-                  onPressed: () { goto(4, y: product["id"]); }, 
-                  child: Text("Ver mas..."), 
+                  onPressed: isLogged ? () { addToCart(product, context); } : null, 
+                  child: Icon(Icons.add_shopping_cart), 
                   ),
-            ElevatedButton(
-              onPressed: isLogged ? () { addToCart(product, context); } : null, 
-              child: Text("Al carrito"), 
-              ) 
+                if (product['model_3d_url'] != null) ElevatedButton(
+                  onPressed: () { setItemUrl(product['model_3d_url']); goto(10); }, 
+                  child: Text("AR"), 
+                ),
               ],
+                ),
+            ElevatedButton(
+              onPressed: () { recommend(product["name"]); }, 
+              child: Text("☆ Mostrar recomendaciones"), 
             ),
           ],
         )

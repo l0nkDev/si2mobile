@@ -27,6 +27,7 @@ dependencies:
   flutter_chat_ui: ^2.5.2
   flutter_chat_core: ^2.6.1
   model_viewer_plus: ^1.9.3
+  camera: ^0.11.1
 
 dev_dependencies:
   flutter_test:
