@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:si2mobile/firebase_api.dart';
 import '../../components/labeledInput.dart';
 
 class Login extends StatelessWidget{

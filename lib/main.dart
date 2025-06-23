@@ -1,12 +1,11 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:si2mobile/firebase_api.dart';
-import 'package:si2mobile/firebase_options.dart';
+import 'package:si2mobile/screens/catalog-purchase/ar.dart';
 import 'package:si2mobile/screens/chatbot/chat.dart';
 import 'package:si2mobile/screens/chatbot/list.dart';
 import 'package:si2mobile/screens/user/feedback.dart';
+import 'package:si2mobile/screens/user/profile.dart';
 import 'screens/auth-session/login.dart';
 import 'screens/auth-session/register.dart';
 import 'screens/catalog-purchase/cart.dart';
@@ -125,6 +124,10 @@ String refreshToken = "";
       page = ChatList(token: token, goto: goto, setchat: setChat, user: user);
     case 8: 
       page = Basic(token: token, goto: goto, user: user, chatid: product, chattoken: chattoken);
+    case 9: 
+      page = Profile(token);
+    case 10: 
+      page = DebugOptions();
   default:
     throw UnimplementedError('no widget for $selectedIndex');
 }
@@ -179,7 +182,7 @@ String refreshToken = "";
                     ),
                   if (isLogged)
                     InkWell(
-                      onTap: () {setState(() {selectedIndex = 6; Navigator.pop(context);});},
+                      onTap: () {setState(() {selectedIndex = 9; Navigator.pop(context);});},
                       child: Row(
                         children: [
                           SizedBox(height: 64, width: 10,),
@@ -201,6 +204,17 @@ String refreshToken = "";
                         ],
                       ),
                     ),
+                  InkWell(
+                    onTap: () {setState(() {selectedIndex = 10; Navigator.pop(context);});},
+                    child: Row(
+                      children: [
+                        SizedBox(height: 64, width: 10,),
+                        Icon(Icons.person),
+                        SizedBox(height: 64, width: 10,),
+                        Text("AR"),
+                      ],
+                    ),
+                  ),
                 ],
               )
               ],

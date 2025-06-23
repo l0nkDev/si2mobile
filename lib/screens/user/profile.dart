@@ -2,92 +2,163 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:si2mobile/models/user.dart';
-import '../../components/labeledInput.dart';
 
 // ignore: must_be_immutable
-class Profile extends StatelessWidget{
+class Profile extends StatefulWidget{
   final String token;
   Profile(this.token, {super.key});
 
-    TextEditingController email = TextEditingController();
-    TextEditingController passwd = TextEditingController();
-    TextEditingController role = TextEditingController();
-    TextEditingController name = TextEditingController();
-    TextEditingController lname = TextEditingController();
-    TextEditingController country = TextEditingController();
-    TextEditingController state = TextEditingController();
-    TextEditingController address = TextEditingController();
+  @override
+  State<Profile> createState() => _ProfileState();
+}
 
-  Future<User> getUser() async {
-    final response = await http.get(Uri.parse("http://l0nk5erver.duckdns.org:5000/users/self"),headers: {HttpHeaders.authorizationHeader: "Bearer $token"});
-    final body = json.decode(response.body);
-    final user = User.fromJson(body);
-    print(user.name);
-    return user;
+class _ProfileState extends State<Profile> {
+  bool loaded = false;
+  Map user = {};
+  Map userdata = {};
+
+  void getUser() async {
+    final response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/auth/loyalty/me/"),headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"});
+    final body = json.decode(response.body) as Map;
+    final response2 = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/auth/users/${body['user']}/"),headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"});
+    final body2 = json.decode(response2.body) as Map;
+    user = body;
+    userdata = body2;
+    loaded = true;
+    setState(() {});
   }
 
-  Future<void> updateProfile(String email, String password, String name, String lname, String country, String state, String address, BuildContext context) async {
-      await http.patch(Uri.http("l0nk5erver.duckdns.org:5000", 'users/self'), 
-      headers: {HttpHeaders.authorizationHeader: "Bearer $token", HttpHeaders.contentTypeHeader: 'application/json'},
-      body: 
-      '''
-        {
-          "email": "$email",
-          "password": "$password",
-          "name": "$name",
-          "lname": "$lname",
-          "country": "$country",
-          "state": "$state",
-          "address": "$address"
-        }
-    '''
-    );
-}
+  @override
+  initState() {
+    super.initState();
+    getUser();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context); 
-    final style = theme.textTheme.headlineMedium!;
-
-    getUser().then((value) => {
-      name.value = TextEditingValue(text: value.name),
-      lname.value = TextEditingValue(text: value.lname),
-      email.value = TextEditingValue(text: value.email),
-      passwd.value = TextEditingValue(text: value.password),
-      role.value = TextEditingValue(text: value.role),
-      country.value = TextEditingValue(text: value.country),
-      state.value = TextEditingValue(text: value.state),
-      address.value = TextEditingValue(text: value.address),
-      });
+    final style = theme.textTheme.bodyLarge!;
 
     return Scaffold(
-      body: Card(
-        child: ListView(
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ifLoaded(loaded, style)
+      ),
+    );
+  }
+
+  Widget ifLoaded(bool loaded, TextStyle style) {
+    if (loaded) {
+      return Column(
+        children: [
+          Row(),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
                 children: [
-                  SizedBox(height: 32,),
-                  Text("Perfil de usuario", style: style),
-                  LabeledInput(label: "Nombre", controller: name),
-                  LabeledInput(label: "Apellido", controller: lname),
-                  LabeledInput(label: "e-mail", controller: email,),
-                  LabeledInput(label: "Contraseña", controller: passwd),
-                  LabeledInput(label: "Rol", controller: role, enabled: false),
-                  LabeledInput(label: "Pais", controller: country),
-                  LabeledInput(label: "Estado/Departamento", controller: state),
-                  LabeledInput(label: "Dirección", controller: address),
-                  FilledButton(
-                    child: Text("Actualizar datos"),
-                    onPressed: () {
-                      updateProfile(email.value.text, passwd.value.text, name.value.text, lname.value.text, country.value.text, state.value.text, address.value.text, context);
-                    }),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Tu nivel de lealtad', style: style.copyWith(fontWeight: FontWeight.bold)),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Nivel actual:', style: style),
+                      ElevatedButton(onPressed: () {}, child: Text(user['tier']))
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text('Descuento actual: ${user["discount_percentage"]}%', style: style),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text('¡Has alcanzado el nivel mas alto!'),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text('Has realizado ${user['total_orders']} pedidos en total.'),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Nivel ${user['tier']} desbloqueado'),
+                  ),
+              
                 ],
               ),
-            ],
+            )
           ),
-        ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Datos del perfil', style: style.copyWith(fontWeight: FontWeight.bold)),
+                  ),
+                  Row(
+                    children: [
+                      Text('Nombre', style: style.copyWith(fontWeight: FontWeight.bold),),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(userdata['first_name']),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('Apellido', style: style.copyWith(fontWeight: FontWeight.bold),),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(userdata['last_name']),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('Correo', style: style.copyWith(fontWeight: FontWeight.bold),),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(userdata['email']),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('Rol', style: style.copyWith(fontWeight: FontWeight.bold),),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(userdata['role']),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                ],
+              ),
+            )
+          ),
+        ],
       );
+    } else {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(),
+          Text('Cargando...')
+        ],
+      );
+    }
   }
 }

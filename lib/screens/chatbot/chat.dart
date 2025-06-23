@@ -21,7 +21,6 @@ class Basic extends StatefulWidget {
 
 class BasicState extends State<Basic> {
   final _chatController = InMemoryChatController();
-  String _responseContent = "";
   @override
   void dispose() {
     _chatController.dispose();
@@ -37,10 +36,10 @@ class BasicState extends State<Basic> {
   void getContent() async {
     final response = await http.get(Uri.parse("https://smart-cart-backend.up.railway.app/api/chatbot/messages/?session=${widget.chatid}&ordering=created_at"), headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}"});
     var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
-    _chatController.setMessages([]);
+    List<Message> messages = [];
     for (var item in decodedResponse['items']) {
       if (item['session'] == widget.chatid) {
-        _chatController.insertMessage(
+        messages.add(
             TextMessage(
               id: "${item['id']}",
               authorId: item['sender'],
@@ -50,27 +49,14 @@ class BasicState extends State<Basic> {
           );
       }
     }
+    _chatController.setMessages(messages);
   }
 
   void sendHandler(String message) async {
-    var request = http.Request('POST', Uri.parse("https://smart-cart-backend.up.railway.app/api/chatbot/interaction/send_message/"));
-    request.body =
-      '{ "message": "$message", "session_token": "${widget.chattoken}"}';
-    request.headers.clear();
-    request.headers.addAll({HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'});
-    var response = await request.send();
-    _responseContent = "";
-    response.stream.listen((List<int> stream) {
-      _responseContent += utf8.decode(stream);
-      print('resultado');
-      print(_responseContent);
-    },
-    onDone: () {
-      print('fin');
-      print(message);
-      print(response.statusCode);
-      print(response.headers);
-    });
+    await http.post(Uri.parse("https://smart-cart-backend.up.railway.app/api/chatbot/interaction/send_message/"),
+    body: '{ "message": "$message", "session_token": "${widget.chattoken}"}',
+    headers: {HttpHeaders.authorizationHeader: "Bearer ${widget.token}", HttpHeaders.contentTypeHeader: 'application/json'});
+    getContent();
   }
 
   @override

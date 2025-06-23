@@ -165,7 +165,7 @@ class FeedbackCard extends StatelessWidget {
             Row(
               children: [
                 SizedBox(width: 8),
-                OutlinedButton( child: Text("Enviar"), onPressed: null),
+                OutlinedButton( onPressed: null, child: Text("Enviar")),
               ],
             ),
             SizedBox(height: 8)

@@ -212,28 +212,6 @@ class PurchaseCard extends StatelessWidget {
               else Text("Estado del pedido: ${product["delivery"]["status_display"]}     "),
             ],
           ),
-          SizedBox(height: 15,),
-          Row(
-            children: [
-              SizedBox(width: 15,),
-              Text("Marcar como: "),
-            ],
-          ),
-          Row(
-            children: [
-              SizedBox(width: 15,),
-              ElevatedButton(child: Text("Pendiente"), onPressed: () {set(product["id"], "pending");}),
-              ElevatedButton(child: Text("Procesando"), onPressed: () {set(product["id"], "processing");}),
-              ElevatedButton(child: Text("En Reparto"), onPressed: () {set(product["id"], "out_for_delivery");}),
-            ],
-          ),
-          Row(
-            children: [
-              SizedBox(width: 15,),
-              ElevatedButton(child: Text("Entregado"), onPressed: () {set(product["id"], "delivered");}),
-              ElevatedButton(child: Text("Fallido"), onPressed: () {set(product["id"], "failed");}),
-            ],
-          ),
           SizedBox(height: 30,),
         ],
       )
